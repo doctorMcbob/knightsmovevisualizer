@@ -1,14 +1,15 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
+#include <SDL2/SDL_image.h>
 #include <stdio.h>
-#define W 151
-#define H 151
+#define W 301
+#define H 301
 #define PW 8
 
 int CELLS[W * H];
 
-int d1 = 0;
-int d2 = 0;
+int d1 = 1;
+int d2 = 2;
 
 int colAlt = 0;
 
@@ -37,14 +38,14 @@ void reset_cells() {
 }
 
 int indexAt(int x, int y) {
-  if (y * H + x >= W * H) {
+  if (y * H + x >= W * H || y * H + x < 0) {
     return -1;
   }
   return CELLS[y*H + x];
 }
 
 void setAt(int x, int y, int v) {
-  if (y * H + x >= W * H) {
+  if (y * H + x >= W * H || y * H + x < 0) {
     return;
   }
   CELLS[y*H + x] = v;
@@ -72,12 +73,15 @@ void update_grid(int n) {
 
       knight_moves(x, y, knightMoves);
       for (int i = 0; i < 8; i++) {
-	int v = indexAt(i, i+1);
+	int x_ = knightMoves[i*2];
+	int y_ = knightMoves[i*2+1];
+	int v = indexAt(x_, y_);
+
 	if (v != 0) {
 	  continue;
 	}
 
-	setAt(x, y, n + 1);
+	setAt(x_, y_, n + 1);
       }
     }
   }
@@ -104,14 +108,47 @@ void draw_grid(SDL_Renderer *renderer, TTF_Font *font) {
   }
 
   char info[100];
+  sprintf(info, "d1 %d d2 %d", d1, d2);
   SDL_Surface* surface = TTF_RenderText_Solid(font, info, (SDL_Color){0, 0, 0, 255});
   SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
   SDL_Rect textRect = {0, H * PW, surface->w, surface->h};
   SDL_RenderCopy(renderer, texture, NULL, &textRect);
-  
   // Clean up
   SDL_FreeSurface(surface);
   SDL_DestroyTexture(texture);
+
+}
+
+void saveRendererToPNG(SDL_Renderer* renderer, int width, int height, const char* filename) {
+    SDL_Surface* saveSurface = SDL_CreateRGBSurface(0, width, height, 32, 0x00FF0000, 0x0000FF00, 0x000000FF, 0xFF000000);
+    if (saveSurface == NULL) {
+        SDL_Log("Failed to create save surface: %s", SDL_GetError());
+        return;
+    }
+
+    SDL_RenderReadPixels(renderer, NULL, SDL_PIXELFORMAT_ARGB8888, saveSurface->pixels, saveSurface->pitch);
+
+    IMG_SavePNG(saveSurface, filename);
+
+    SDL_FreeSurface(saveSurface);
+}
+
+void chart_100() {
+  int n = 1;
+  reset_cells();
+  while (n < 100) {
+    update_grid(n);
+    n++;
+  }
+}
+
+void chart_200() {
+  int n = 1;
+  reset_cells();
+  while (n < 200) {
+    update_grid(n);
+    n++;
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -166,8 +203,11 @@ int main(int argc, char* argv[]) {
 	  SHOULD_RUN = 0;
 	} else if (event.type == SDL_KEYDOWN) {
 	  switch (event.key.keysym.sym) {
-	  case SDLK_q:
+	  case SDLK_ESCAPE:
 	    SHOULD_RUN = 0;
+	    break;
+	  case SDLK_r:
+	    reset_cells();
 	    break;
 	  case SDLK_LEFT:
 	    d1 -= 1;
@@ -182,12 +222,33 @@ int main(int argc, char* argv[]) {
 	    d2 -= 1;
 	    break;
 	  case SDLK_SPACE: {
-	    int n = 1;
-	    while (n < 100) {
-	      printf("%i\n", n);
-	      update_grid(n);
-	      n++;
+	    chart_100();
+	    break;
+	  }
+	  case SDLK_p: {
+	    d1 = 1;
+	    d2 = 2;
+
+	    while (d1 < 200) {
+	      chart_100();
+	      draw_grid(renderer, font);
+
+	      char filename[100];
+	      sprintf(filename, "gif_frame%i.png", d1-1);
+	      saveRendererToPNG(renderer, PW * W, PW * H + 16, filename);
+
+	      d1++;
+	      d2++;
 	    }
+	    d1 = 1;
+	    d2 = 2;
+	    break;
+	  }
+	  case SDLK_RETURN: {
+	    char filename[100];
+	    sprintf(filename, "km:%d_%d.png", d1, d2);
+	    saveRendererToPNG(renderer, PW * W, PW * H + 16, filename);
+	    printf("Saved to %s\n", filename);
 	    break;
 	  }
 	  }

@@ -2,8 +2,8 @@
 #include <SDL2/SDL_ttf.h>
 #include <SDL2/SDL_image.h>
 #include <stdio.h>
-#define W 301
-#define H 301
+#define W 151
+#define H 151
 #define PW 8
 
 int CELLS[W * H];

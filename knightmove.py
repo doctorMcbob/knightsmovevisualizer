@@ -2,8 +2,9 @@ import pygame as pg
 from pygame.locals import *
 pg.init()
 import time
+import printer
 
-PW = 8
+PW = 16
 W, H = 151, 151
 SCREEN = pg.display.set_mode((PW * W, PW * H + 16))
 HEL16 = pg.font.SysFont("Helvetica", 16)
@@ -13,12 +14,16 @@ d2 = 2
 
 offx = 0
 offy = 0
+LIM = 5
 
 GRID_STATE = {
     (0, 0): 1
 }
 
 colalt = 0
+
+last = set()
+last.add((0, 0))
 
 def number_to_rgb(number):
     # Use prime numbers to generate a pseudo-random sequence
@@ -50,7 +55,7 @@ def draw_grid(dest, pw):
             HEL16.render(f"d1 {d1} d2 {d2}", 0, (0,0,0)),
             (0, dest.get_height() - 16)
     )
-    colalt += 1
+    #colalt += 1
 
 def knight_moves(x, y):
     yield x + d2, y + d1
@@ -63,21 +68,26 @@ def knight_moves(x, y):
     yield x - d1, y - d2
 
 def update_grid(n, draw=False):
-    for key in list(GRID_STATE.keys()):
+    spots = set()
+    for key in last:
+        if key not in GRID_STATE:
+            print(key, GRID_STATE.keys())
+            quit()
         v = GRID_STATE[key]
         if v == n:
             x, y = key
             for square in knight_moves(x, y):
                 if square not in GRID_STATE:
                     GRID_STATE[square] = n + 1
+                    spots.add(square)
                     if draw:
                         draw_grid(SCREEN, PW)
                         pg.display.update()
                         draw = pg.key.get_mods() & KMOD_SHIFT
                         for e in pg.event.get():
                             if e.type == KEYDOWN and e.key == K_q: quit()
-                            if e.type == KEYDOWN and e.key == K_d: return "QUIT"
                             handle_window_events(e)
+    return spots
 
 def handle_window_events(e):
     global PW, offx, offy
@@ -94,6 +104,22 @@ def handle_window_events(e):
         offx = 0-SCREEN.get_width() // PW // 2
         offy = 0-SCREEN.get_height() // PW // 2
 
+
+def is_prime(n):
+    if n <= 1: return False
+    for i in range(2, int(n**0.5) + 1):
+        if n % i == 0: return False
+    return True
+
+
+def next_prime():
+    prime = 2
+    while True:
+        if is_prime(prime):
+            yield prime
+        prime += 1
+
+n = 1
 while __name__ == "__main__":
     draw_grid(SCREEN, PW)
     pg.display.update()
@@ -106,12 +132,13 @@ while __name__ == "__main__":
         if e.type == KEYDOWN and e.key == K_DOWN: d2 -= 1
 
         if e.type == KEYDOWN and e.key == K_SPACE:
-            n = 1
-            while n < 100:
+            c = 0
+            while c < LIM:
                 pg.event.pump()
-                if "QUIT" == update_grid(n, draw = pg.key.get_mods() & KMOD_SHIFT): break
-                print(n)
+                last = update_grid(n, draw = not (pg.key.get_mods() & KMOD_SHIFT) )
                 n += 1
+                print(c, n)
+                c += 1
         
         handle_window_events(e)
 
@@ -124,9 +151,41 @@ while __name__ == "__main__":
             GRID_STATE = {
                 (0, 0): 1
             }
+            n = 1
             d1 = 1
             d2 = 2
+            last = set()
+            last.add((0, 0))
 
             offx = 0
             offy = 0
 
+
+        if e.type == KEYDOWN and e.key == K_p:
+            prime = next_prime()
+            d1 = next(prime)
+
+            for i in range(90):
+                d2 = next(prime)
+                n = 1
+                GRID_STATE = {
+                    (0, 0): 1
+                }
+                last = set()
+                last.add((0, 0))
+                n = 1
+                
+                while n < LIM:
+                    last = update_grid(n)
+                    n+=1
+
+                LIM += 10
+                draw_grid(SCREEN, PW)
+                pg.display.update()
+                printer.save_surface(SCREEN)
+
+            printer.save_em()
+            printer.make_gif("2prime30fps.gif", 30)
+            printer.make_gif("2prime20fps.gif", 20)
+            printer.make_gif("2prime10fps.gif", 10)
+            printer.clear_em()

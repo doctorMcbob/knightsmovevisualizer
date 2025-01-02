@@ -24,7 +24,10 @@ I think im going to make an n dimensional array of the drawable map so to speak
 then we will track the numbers there that are for lookups, and we can then only track
   the deepest knight moves for iteration.
 I think that should work?
-hmm the problem is then the knights off the array dont stop duplicating
+hmm the problem is then the knights off the array dont stop duplicating...
+I adjusted the logic so the knight cannot move off the board, im deciding that isnt
+  a violation of mathematical purity considering in regular chess the knight cannot
+  leave the board either (so there)
 """
 from itertools import permutations, combinations
 import pygame
@@ -66,11 +69,20 @@ def setAt(multiarray, position, value):
         axis -= 1
     head[position[axis]] = value
 
-PW = 4
-W, H = 115, 115
+try:
+    PW = int(input("pixel width (default 4): "))
+except ValueError:
+    PW = 4
+
+try:
+    size = int(input("size (default 115): "))
+except ValueError:
+    size = 115
+W, H = size, size
+
 SCREEN = pygame.display.set_mode((PW * W, PW * H))
 HEL16 = pygame.font.SysFont("Helvetica", 16)
-dimensions = 3
+dimensions = int(input("dimensions: "))
 def make_new(n): return { tuple(W//2 for _ in range(n)) }
 HEAD = make_new(dimensions)
 BOARD = ndimensional_array(dimensions, tuple(W for _ in range(dimensions)))
@@ -158,6 +170,8 @@ def update_board():
 
 go = False
 indexers = list(W//2 for _ in range(dimensions))
+axis1 = 0
+axis2 = 1
 while __name__ == "__main__":
     draw_plane(SCREEN, PW, 0, 1, tuple(indexers))
     wait = True
@@ -191,6 +205,40 @@ while __name__ == "__main__":
                     indexers[2] %= W
                     wait = False
 
+                if e.key == K_LEFT:
+                    axis1 -= 1
+                    axis2 -= 1
+                    axis1 %= dimensions
+                    axis2 %= dimensions
+                    wait = False
+
+                if e.key == K_RIGHT:
+                    axis1 += 1
+                    axis2 += 1
+                    axis1 %= dimensions
+                    axis2 %= dimensions
+                    wait = False
+
+                if e.key == K_w and dimensions > 3:
+                    indexers[3] += 1
+                    indexers[3] %= W
+                    wait = False
+
+                if e.key == K_s and dimensions > 3:
+                    indexers[3] -= 1
+                    indexers[3] %= W
+                    wait = False
+
+                if e.key == K_a and dimensions > 4:
+                    indexers[4] += 1
+                    indexers[4] %= W
+                    wait = False
+
+                if e.key == K_d and dimensions > 4:
+                    indexers[4] -= 1
+                    indexers[4] %= W
+                    wait = False
+
                 if e.key == K_PERIOD:
                     for i in range(W):
                         indexers[2] = i
@@ -198,6 +246,8 @@ while __name__ == "__main__":
                         printer.save_surface(SCREEN)
                         pygame.display.update()
                     printer.save_em()
-                    fname = printer.make_gif(fps=8)
+                    fname = printer.make_gif(
+                        f"ndkm-{d1}x{d2}-d{dimensions}-x{axis1}y{axis2}-{'.'.join([str(i) for i in indexers])}.gif",
+                        fps=8)
                     printer.clear_em()
                     print("Saved gif as", fname)

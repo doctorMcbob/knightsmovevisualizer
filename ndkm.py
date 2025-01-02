@@ -67,7 +67,7 @@ def setAt(multiarray, position, value):
     head[position[axis]] = value
 
 PW = 4
-W, H = 225, 225
+W, H = 115, 115
 SCREEN = pygame.display.set_mode((PW * W, PW * H))
 HEL16 = pygame.font.SysFont("Helvetica", 16)
 dimensions = 3
@@ -75,7 +75,8 @@ def make_new(n): return { tuple(W//2 for _ in range(n)) }
 HEAD = make_new(dimensions)
 BOARD = ndimensional_array(dimensions, tuple(W for _ in range(dimensions)))
 number = 0
-d1, d2 = 47, 10
+d1 = int(input("d1: "))
+d2 = int(input("d2: "))
 
 setAt(BOARD, tuple(W//2 for _ in range(dimensions)), number)
 

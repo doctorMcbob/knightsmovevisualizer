@@ -251,3 +251,18 @@ while __name__ == "__main__":
                         fps=8)
                     printer.clear_em()
                     print("Saved gif as", fname)
+
+                if e.key == K_COMMA and dimensions > 3:
+                    for i in range(W):
+                        indexers[3] = i
+                        for j in range(W):
+                            indexers[2] = j
+                            draw_plane(SCREEN, PW, 0, 1, tuple(indexers))
+                            printer.save_surface(SCREEN)
+                            pygame.display.update()
+                    printer.save_em()
+                    fname = printer.make_gif(
+                        f"ndkm-{d1}x{d2}-d{dimensions}-x{axis1}y{axis2}-sweep.gif",
+                        fps=8)
+                    printer.clear_em()
+                    print("Saved gif as", fname)

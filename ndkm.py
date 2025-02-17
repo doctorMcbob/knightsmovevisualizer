@@ -33,6 +33,7 @@ from itertools import permutations, combinations
 import pygame
 from pygame.locals import *
 from copy import deepcopy
+from math import sqrt, ceil
 import printer
 
 pygame.init()
@@ -266,3 +267,39 @@ while __name__ == "__main__":
                         fps=8)
                     printer.clear_em()
                     print("Saved gif as", fname)
+
+                if e.key == K_m and dimensions == 4:
+                    w = ceil(sqrt(W))
+                    big_surfs = [pygame.Surface((W*w, H*w)) for _ in range(W)]
+                    for i in range(W):
+                        indexers[3] = i
+                        surf = pygame.Surface((W, H))
+                        for j in range(W):
+                            indexers[2] = j
+                            draw_plane(surf, 1, 0, 1, tuple(indexers))
+                            pygame.display.update()
+                            big_surfs[j].blit(surf, ((i%w)*W, (i//w)*W))
+                    for big_surf in big_surfs:
+                        printer.save_surface(big_surf)
+                    printer.save_em()
+                    fname = printer.make_gif(
+                        f"ndkm-{d1}x{d2}-d{dimensions}-x{axis1}y{axis2}-splay.gif",
+                        fps=8
+                    )
+                    printer.clear_em()
+                    print("Saved gif as", fname)
+
+                if e.key == K_n and dimensions > 3:
+                    big_surf = pygame.Surface((W*W, H*W))
+                    for i in range(W):
+                        indexers[3] = i
+                        surf = pygame.Surface((W, H))
+                        for j in range(W):
+                            indexers[2] = j
+                            draw_plane(surf, 1, 0, 1, tuple(indexers))
+                            pygame.display.update()
+                            big_surf.blit(surf, (i*W, j*H))
+                    fname = f"./ndkm-{d1}x{d2}-d{dimensions}-{W},{H}-splay.png"
+                    pygame.image.save(big_surf, fname)
+                    print("Saved png as", fname)
+
